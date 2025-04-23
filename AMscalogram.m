@@ -13,22 +13,32 @@ function [AMsgram, fc, scale, step] = AMscalogram(insig, fs, window_NT, varargin
 
 if nargin<2
   error('%s: Too few input arguments.',upper(mfilename));
-end;
+end
 
 if ~isnumeric(insig) 
   error('%s: insig must be numeric.',upper(mfilename));
-end;
+end
 
 if ~isnumeric(fs) || ~isscalar(fs) || fs<=0
   error('%s: fs must be a positive scalar.',upper(mfilename));
-end;
+end
 
-definput.import={'varnet2017'}; 
-definput.importdefaults={}; 
+% definput.import={'varnet2017'}; 
+% definput.importdefaults={}; 
+% 
+% do_silent = 1;
+% 
+% [flags,kv]  = ltfatarghelper({'flow','fhigh'},definput,varargin);
+definput = arg_varnet2017(struct());
+kv = definput.keyvals;
+for i = 1:length(varargin)/2
+    k = varargin{2*i-1};
+    v = varargin{2*i};
+    kv.(k) = v;
+end
 
 do_silent = 1;
 
-[flags,kv]  = ltfatarghelper({'flow','fhigh'},definput,varargin);
 
 % defines the modulation axis
 mflow  = kv.mflow;
@@ -46,8 +56,12 @@ f_spectra           = logspace(log10(sqrt(f_spectra_intervals(1)*f_spectra_inter
 t=(1:length(insig))/fs;
 
 %%% gammatone filtering
-[gamma_responses,fc] = auditoryfilterbank(insig,fs,kv.flow,kv.fhigh);
-f_bw = audfiltbw(fc);
+% [gamma_responses,fc] = auditoryfilterbank(insig,fs,kv.flow,kv.fhigh);
+% f_bw = audfiltbw(fc);
+gammaFiltBank = gammatoneFilterBank([kv.flow, kv.fhigh], 'SampleRate', fs);
+gamma_responses = gammaFiltBank(insig);
+fc = gammaFiltBank.getCenterFrequencies();
+f_bw = gammaFiltBank.getBandwidths();
 
 %%% AM extraction
 if do_silent == 0
@@ -61,37 +75,59 @@ if do_silent == 0
     fprintf('calculating envelope scalograms\n');
 end
 
+
 for ichan=1:Nchan
-    clear AMspec
+    %clear AMspec
+    
     fprintf(['chan #' num2str(ichan) ' of ' num2str(Nchan) '\n'])
+    
     for ifreq = 1:N_fsamples
-        window_length = window_NT*1/f_spectra(ifreq);
+        window_duration = window_NT*1/f_spectra(ifreq);
         
         % segment wavfiles into windows
         shift = 0.1;
-        windows = windowing(E(:,ichan), fs, window_length, shift, 1);
+        windows = windowing(E(:,ichan), fs, window_duration, shift, 1);
         Nwindows = size(windows,2);
+        window_length = size(windows,1);
+
+        if ifreq==1
+            if ichan==1
+                AMsgram = zeros(Nwindows+1, N_fsamples);
+                scale = zeros(1, N_fsamples);
+            end
+            %AMspec = zeros(Nwindows+1, N_fsamples);
+        end
         
         for iwindow = 1:Nwindows
             % loop on segmented files
             temp = windows(:,iwindow);
-            [Efft, temp_mf] = periodogram(temp,[],[0.01 f_spectra(ifreq)],fs,'psd'); % recall that f must contain at least two elements
-            Efft=2*Efft(2); % because the output is a 2-sided periodogram
-            AMspec(iwindow+round(window_length/2/shift),ifreq) = Efft; % PSD : power = mean(E(:,ichan).^2) = sum(Efft.*diff(f_spectra_intervals))
+            % [Efftp, ~] = periodogram(temp,[],[0.01 f_spectra(ifreq)],fs,'psd'); % recall that f must contain at least two elements
+            % Efftp = Efftp(2);
+            k = f_spectra(ifreq)/fs*window_length;
+            G = goertzel(temp, k+1);
+            %G2 = signal.internal.goertzel.callGoertzel(xg,k, false, false, true);
+            Efft = real(G .* conj(G) / window_length) / fs; % Note that this is sort of assuming rectangular window when we are actually using Gaussian...
+            Efft=2*Efft; % because the output is a 2-sided periodogram
+            AMsgram(iwindow+round(window_duration/2/shift),ifreq) = AMsgram(iwindow+round(window_duration/2/shift),ifreq) + Efft; % PSD : power = mean(E(:,ichan).^2) = sum(Efft.*diff(f_spectra_intervals))
         end
-        scale(ifreq) = f_spectra(ifreq);
+        if ichan == 1
+            scale(ifreq) = f_spectra(ifreq);
+        end
     end
     
-    if exist('AMsgram')
-        AMsgram = AMsgram + AMspec;
-    else
-        AMsgram = AMspec;
-    end
+    %AMsgram = AMsgram + AMspec;
+
+    % if exist('AMsgram')
+    %     AMsgram = AMsgram + AMspec;
+    % else
+    %     AMsgram = AMspec;
+    % end
     
-    AMsgram(AMsgram==0) = nan;
 end
 
-t = (1:Nwindows)*shift;
+AMsgram(AMsgram==0) = nan;
+
+t = (1:size(AMsgram,1))*shift;
 
 if nargout>3
     step.t = t;

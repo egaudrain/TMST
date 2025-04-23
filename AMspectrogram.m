@@ -21,12 +21,23 @@ if ~isnumeric(fs) || ~isscalar(fs) || fs<=0
   error('%s: fs must be a positive scalar.',upper(mfilename));
 end;
 
+%{
 definput.import={'varnet2017'}; 
 definput.importdefaults={}; 
 
 do_silent = 1;
 
 [flags,kv]  = ltfatarghelper({'flow','fhigh'},definput,varargin);
+%}
+definput = arg_varnet2017(struct());
+kv = definput.keyvals;
+for i = 1:length(varargin)/2
+    k = varargin{2*i-1};
+    v = varargin{2*i};
+    kv.(k) = v;
+end
+
+do_silent = 1;
 
 % defines the modulation axis
 mflow  = kv.mflow;
@@ -44,8 +55,13 @@ f_spectra           = logspace(log10(sqrt(f_spectra_intervals(1)*f_spectra_inter
 t=(1:length(insig))/fs;
 
 %%% gammatone filtering
-[gamma_responses,fc] = auditoryfilterbank(insig,fs,kv.flow,kv.fhigh);
-f_bw = audfiltbw(fc);
+% [gamma_responses,fc] = auditoryfilterbank(insig,fs,kv.flow,kv.fhigh);
+% f_bw = audfiltbw(fc);
+nERBs = ceil(diff(ERBn_number([kv.flow, kv.fhigh])));
+gammaFiltBank = gammatoneFilterBank([kv.flow, kv.fhigh], nERBs, 'SampleRate', fs);
+gamma_responses = gammaFiltBank(insig);
+fc = gammaFiltBank.getCenterFrequencies();
+f_bw = gammaFiltBank.getBandwidths();
 
 %%% AM extraction
 if do_silent == 0

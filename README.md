@@ -1,8 +1,10 @@
-# Temporal Modulation Spectrum Toolbox (TMST)
+# Temporal Modulation Spectrum Toolbox (TMST) - *sans AMT*
 ## Overview
 
 The Temporal Modulation Spectrum Toolbox is a Matlab toolbox designed for the computation of amplitude- and f0-modulation spectra and spectrograms. This versatile toolbox has been developed to analyze temporal modulations in audio signals and has proven useful in various research applications, including speech signal analysis and the study of natural soundscapes.
 TMST is an updated version of the "AM_FM_spectra" scripts used by Varnet et al. (2017) and available on Github (https://github.com/LeoVarnet/AM_FM_Spectra). While the core functionality remains the same, certain parameters, such as the modulation quality factor Q, have been refined to enhance the accuracy of the analysis. Please note that, because of these changes, the authors cannot guarantee exact reproducibility of results as obtained with the previous scripts.
+
+This version has been reworked to remove the dependency on the Auditory Matlab Toolbox (AMT), since it is only used for gammatone filtering, and use the MathWorks Audio toolbox instead. Some functions that rely on `periodogram` where also rewritten to be much faster, either by using an FFT, or by calling `goertzel` directly. In most cases the modified version runs at least twice as fast.
 
 ## Features
 
@@ -16,17 +18,17 @@ See section [Example WalkThrough](https://github.com/LeoVarnet/TMST/blob/main/RE
 
 ## Dependencies
 
-Before using the Temporal Modulation Spectrum Toolbox, please ensure you have the following dependencies installed:
-- [Auditory Modeling Toolbox](https://amtoolbox.org/)
+If you wish to use the f0-based functions of the Temporal Modulation Spectrum Toolbox, please ensure you have the following dependency installed:
 - [YIN](http://audition.ens.fr/adc/sw/yin.zip)
+
+This version of the TMST does not depend on the Auditory Matlab Toolbox. However you do need the [MathWorks audio toolbox](https://nl.mathworks.com/products/audio.html), the [MathWorks Signal Processing toolbox](https://nl.mathworks.com/products/signal.html), and the [MathWorks Wavelet toolbox](https://nl.mathworks.com/products/wavelet.html) (if you intend to use `AMwavelet`).
 
 ## Getting Started
 
 - System Requirements: TMST is designed for Matlab and requires a compatible version of the software to function correctly. It is recommended to use Matlab R2017b or later for optimal performance.
 - Installation: To install the toolbox, follow these steps:
-a. Install the Auditory Modeling Toolbox (AMT) and YIN, as mentioned in the "Dependencies" section above.
+a. Install YIN by adding it to your Matlab path, as mentioned in the "Dependencies" section above.
 b. Clone or download the TMST repository and add the toolbox folder to your Matlab path.
-c. Run the "startup_TMST.m" script to set up the toolbox environment and load necessary functions.
 - Usage: To use TMST, call the provided functions from your Matlab script or command window. The "demo_toolbox.m" script illustrates the possibilities of the toolbox on an excerpt from Simone Signoret's voice (see section [Example WalkThrough](https://github.com/LeoVarnet/TMST/blob/main/README.md#example-walkthrough)).
 
 ## References
@@ -41,7 +43,7 @@ Thoret, E., Varnet, L., Boubenec, Y., Ferrière, R., Le Tourneau, F.-M., Krause,
 
 ## How to cite this repository
 
-This repository can be cited as follows: 
+The original repository can be cited as follows: 
 
 L. Varnet (2023). "Temporal Modulation Spectrum Toolbox: A Matlab toolbox for the computation of amplitude- and f0- modulation spectra and spectrograms." 
 

@@ -5,22 +5,33 @@ function [f0Mspec, mf, step] = f0Mspectrum(insig, fs, varargin)
 
 if nargin<2
   error('%s: Too few input arguments.',upper(mfilename));
-end;
+end
 
 if ~isnumeric(insig) 
   error('%s: insig must be numeric.',upper(mfilename));
-end;
+end
 
 if ~isnumeric(fs) || ~isscalar(fs) || fs<=0
   error('%s: fs must be a positive scalar.',upper(mfilename));
-end;
+end
 
-definput.import={'varnet2017'}; 
-definput.importdefaults={}; 
+% definput.import={'varnet2017'}; 
+% definput.importdefaults={}; 
+% 
+% do_silent = 1;
+% 
+% [flags,kv]  = ltfatarghelper({'flow','fhigh'},definput,varargin);
+
+definput = arg_varnet2017(struct());
+kv = definput.keyvals;
+for i = 1:length(varargin)/2
+    k = varargin{2*i-1};
+    v = varargin{2*i};
+    kv.(k) = v;
+end
 
 do_silent = 1;
 
-[flags,kv]  = ltfatarghelper({'flow','fhigh'},definput,varargin);
 
 % defines the modulation axis
 mflow  = kv.mflow;
