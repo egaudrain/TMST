@@ -4,7 +4,7 @@ clc
 clear all
 close all
 
-[S, fs] = audioread("LaVoixHumaine_6s.wav");
+[S, fs] = audioread("../LaVoixHumaine_6s.wav");
 dur = length(S)/fs;
 S = S/rms(S);
 t = (1:length(S))/fs;
@@ -26,7 +26,7 @@ xlim(fc([1 end]))
 
 %% AM scalogram
 
-[AMsgram, fc_spectro, scale_spectro, step] = AMscalogram(S, fs, 5);
+[AMsgram, fc_spectro, scale_spectro, step] = AMscalogram(S, fs, 5, .1);
 
 figure('Position',[100 100 600 1000]);
 subplot(5,3,[1 2],'align'); plot(t, S); ylim((max(abs(S))+1)*[-1 +1]); xlim([0 dur]);title('waveform');set(gca,'XTickLabels',[]);set(gca,'TickDir','out');%xlabel('Time (s)'); 

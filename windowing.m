@@ -22,7 +22,7 @@ end
 i=1;
 windows = [];
 while i+width_in_sample<length(signal)
-    windows = [windows (signal(i:i+width_in_sample-1).*G')'/norm];
+    windows = [windows, (signal(i:i+width_in_sample-1).*G')'/norm];
     i=i+shift_in_sample;
 end
 end

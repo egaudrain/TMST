@@ -1,8 +1,9 @@
-function [AMsgram, fc, scale, step] = AMscalogram(insig, fs, window_NT, varargin)
+function [AMsgram, fc, scale, step] = AMscalogram(insig, fs, window_ncycl, shift, varargin)
 %AMspectrogram Amplitude modulation scalogram from periodgram
 %   [AMsgram, fc, scale, step] = AMspectrogram(insig, fs, varargin)
 % returns the AM scalogram of signal insig.
 % fs: sampling frequency
+% window_ncycl: the window duration in number of cycles
 % shift: time shift between windows (in sec.) Determines the sampling freq.
 % of the scalogram
 % AMspec is a N-by-M function where N is the number of modulation
@@ -58,7 +59,8 @@ t=(1:length(insig))/fs;
 %%% gammatone filtering
 % [gamma_responses,fc] = auditoryfilterbank(insig,fs,kv.flow,kv.fhigh);
 % f_bw = audfiltbw(fc);
-gammaFiltBank = gammatoneFilterBank([kv.flow, kv.fhigh], 'SampleRate', fs);
+nERBs = ceil(diff(ERBn_number([kv.flow, kv.fhigh])));
+gammaFiltBank = gammatoneFilterBank([kv.flow, kv.fhigh], nERBs, 'SampleRate', fs);
 gamma_responses = gammaFiltBank(insig);
 fc = gammaFiltBank.getCenterFrequencies();
 f_bw = gammaFiltBank.getBandwidths();
@@ -81,21 +83,18 @@ for ichan=1:Nchan
     
     fprintf(['chan #' num2str(ichan) ' of ' num2str(Nchan) '\n'])
     
-    for ifreq = 1:N_fsamples
-        window_duration = window_NT*1/f_spectra(ifreq);
+    for ifreq = N_fsamples:-1:1 % Start from the highest frequency to have the max windows
+        window_duration = window_ncycl/f_spectra(ifreq);
         
         % segment wavfiles into windows
-        shift = 0.1;
+        % shift = 0.1;
         windows = windowing(E(:,ichan), fs, window_duration, shift, 1);
         Nwindows = size(windows,2);
         window_length = size(windows,1);
 
-        if ifreq==1
-            if ichan==1
-                AMsgram = zeros(Nwindows+1, N_fsamples);
-                scale = zeros(1, N_fsamples);
-            end
-            %AMspec = zeros(Nwindows+1, N_fsamples);
+        if ifreq==N_fsamples && ichan==1
+            AMsgram = zeros(Nwindows+1, N_fsamples);
+            scale = zeros(1, N_fsamples);
         end
         
         for iwindow = 1:Nwindows
